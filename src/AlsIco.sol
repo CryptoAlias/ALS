@@ -28,13 +28,13 @@ contract SafeMath {
 }
 
 contract AlsToken {
-    function balanceOf(address _owner) public constant returns (uint256 balance);
+    function balanceOf(address _owner) public constant returns (uint256);
     function transfer(address receiver, uint amount) public;
 }
 
 contract Owned {
 
-    address private owner;
+    address internal owner;
 
     function Owned() {
         owner = msg.sender;
@@ -49,7 +49,7 @@ contract Owned {
         owner = newOwner;
     }
 
-    function getOwner() public constant returns (String currentOwner) {
+    function getOwner() public constant returns (address currentOwner) {
         return owner;
     }
 }
@@ -57,12 +57,12 @@ contract Owned {
 contract AlsIco is Owned, SafeMath {
 
     // Crowdsale start time in seconds since epoch.
-    // Equivalent to Monday, October 2, 2017 00:00:00 UTC
-    uint256 public constant crowdsaleStartTime = 1506902400;
+    // Equivalent to Wednesday, November 1st 2017, 3 pm GMT (3 pm London time).
+    uint256 public constant crowdsaleStartTime = 1509548400;
 
     // Crowdsale end time in seconds since epoch.
-    // Equivalent to Monday, October 30, 2017 00:00:00 UTC
-    uint256 public constant crowdsaleEndTime = 1509321600;
+    // Equivalent to Thursday, November 30th 2017, 3 pm GMT (3 pm London time).
+    uint256 public constant crowdsaleEndTime = 1512054000;
 
     uint public amountRaised;
     AlsToken public alsToken;
@@ -87,20 +87,20 @@ contract AlsIco is Owned, SafeMath {
     function getPrice() public constant onlyAfterStart onlyBeforeEnd returns (uint256) {
 
         if (now < (crowdsaleStartTime + 1 days)) {
-            // In the first day, 1 ETH buys 1500 ALS.
-            return 1500;
+            // In the first day, 1 ETH buys 1250 ALS.
+            return 1250;
         } else if (now < (crowdsaleStartTime + 3 days)) {
-            // In the first 3 days, 1 ETH buys 1400 ALS.
-            return 1400;
-        } else if (now < (crowdsaleStartTime + 6 days)) {
-            // In the first 6 days, 1 ETH buys 1300 ALS.
-            return 1300;
-        } else if (now < (crowdsaleStartTime + 10 days)) {
-            // In the first 10 days, 1 ETH buys 1200 ALS.
+            // In the first 3 days, 1 ETH buys 1200 ALS.
             return 1200;
-        } else if (now < (crowdsaleStartTime + 15 days)) {
-            // In the first 15 days, 1 ETH buys 1100 ALS.
+        } else if (now < (crowdsaleStartTime + 6 days)) {
+            // In the first 6 days, 1 ETH buys 1150 ALS.
+            return 1150;
+        } else if (now < (crowdsaleStartTime + 10 days)) {
+            // In the first 10 days, 1 ETH buys 1100 ALS.
             return 1100;
+        } else if (now < (crowdsaleStartTime + 15 days)) {
+            // In the first 15 days, 1 ETH buys 1050 ALS.
+            return 1050;
         } else {
             // After the first 15 days, 1 ETH buys 1000 ALS.
             return 1000;
@@ -108,7 +108,7 @@ contract AlsIco is Owned, SafeMath {
     }
 
     function () payable onlyAfterStart onlyBeforeEnd {
-        uint256 availableTokens = alsToken.balanceOf[this];
+        uint256 availableTokens = alsToken.balanceOf(this);
         require (availableTokens > 0);
 
         uint256 etherAmount = msg.value;
@@ -131,14 +131,13 @@ contract AlsIco is Owned, SafeMath {
 
             // Return the rest of the funds back to the caller.
             uint256 amountToRefund = safeSub(etherAmount, etherToSpend);
-            msg.sender.send(amountToRefund);
+            msg.sender.transfer(amountToRefund);
         }
     }
 
     function withdrawEther(uint _amount) external onlyOwner {
         require(this.balance >= _amount);
-        if (owner.send(_amount)) {
-            FundTransfer(owner, _amount, false);
-        }
+        owner.transfer(_amount);
+        FundTransfer(owner, _amount, false);
     }
 }

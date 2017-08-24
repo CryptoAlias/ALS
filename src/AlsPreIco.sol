@@ -28,13 +28,13 @@ contract SafeMath {
 }
 
 contract AlsToken {
-    function balanceOf(address _owner) public constant returns (uint256 balance);
+    function balanceOf(address _owner) public constant returns (uint256);
     function transfer(address receiver, uint amount) public;
 }
 
 contract Owned {
 
-    address private owner;
+    address internal owner;
 
     function Owned() {
         owner = msg.sender;
@@ -49,7 +49,7 @@ contract Owned {
         owner = newOwner;
     }
 
-    function getOwner() public constant returns (String currentOwner) {
+    function getOwner() public constant returns (address currentOwner) {
         return owner;
     }
 }
@@ -57,15 +57,15 @@ contract Owned {
 contract AlsPreIco is Owned, SafeMath {
 
     // Crowdsale start time in seconds since epoch.
-    // Equivalent to Monday, September 4, 2017 00:00:00 UTC
-    uint256 public constant crowdsaleStartTime = 1504483200;
+    // Equivalent to Tuesday, September 12th 2017, 2 pm GMT (3 pm London time)
+    uint256 public constant crowdsaleStartTime = 1505224800;
 
     // Crowdsale end time in seconds since epoch.
-    // Equivalent to Monday, September 25, 2017 00:00:00 UTC
-    uint256 public constant crowdsaleEndTime = 1506297600;
+    // Equivalent to Tuesday, October 3rd 2017, 2 pm GMT (3 pm London time).
+    uint256 public constant crowdsaleEndTime = 1507039200;
 
-    // During the pre-ICO: 1 ETH buys 2500 ALS.
-    uint public constant price = 2500;
+    // During the pre-ICO 1 ETH buys 2000 ALS.
+    uint public constant price = 2000;
 
     uint public amountRaised;
     AlsToken public alsToken;
@@ -87,7 +87,7 @@ contract AlsPreIco is Owned, SafeMath {
     }
 
     function () payable onlyAfterStart onlyBeforeEnd {
-        uint256 availableTokens = alsToken.balanceOf[this];
+        uint256 availableTokens = alsToken.balanceOf(this);
         require (availableTokens > 0);
 
         uint256 etherAmount = msg.value;
@@ -108,14 +108,13 @@ contract AlsPreIco is Owned, SafeMath {
 
             // Return the rest of the funds back to the caller.
             uint256 amountToRefund = safeSub(etherAmount, etherToSpend);
-            msg.sender.send(amountToRefund);
+            msg.sender.transfer(amountToRefund);
         }
     }
 
     function withdrawEther(uint _amount) external onlyOwner {
         require(this.balance >= _amount);
-        if (owner.send(_amount)) {
-            FundTransfer(owner, _amount, false);
-        }
+        owner.transfer(_amount);
+        FundTransfer(owner, _amount, false);
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity 0.4.11;
+pragma solidity ^0.4.11;
 
 /**
  * ERC20 interface
@@ -7,32 +7,33 @@ pragma solidity 0.4.11;
 contract ERC20 {
 
     // Get the total token supply.
-    function totalSupply() public constant returns (uint256 totalSupply);
+    function totalSupply() public constant returns (uint256);
 
     // Get the account balance of another account with address _owner.
-    function balanceOf(address _owner) public constant returns (uint256 balance);
+    function balanceOf(address _owner) public constant returns (uint256);
 
     // Send _value amount of tokens to address _to.
-    function transfer(address _to, uint256 _value) public returns (bool success);
+    function transfer(address _to, uint256 _value) public returns (bool);
 
     /* Send _value amount of tokens from address _from to address _to.
      * The transferFrom method is used for a withdraw workflow, allowing contracts to send tokens on your behalf,
      * for example to "deposit" to a contract address and/or to charge fees in sub-currencies; the command should
      * fail unless the _from account has deliberately authorized the sender of the message via the approve mechanism. */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool);
 
     /* Allow _spender to withdraw from your account, multiple times, up to the _value amount.
      * If this function is called again it overwrites the current allowance with _value. */
-    function approve(address _spender, uint256 _value) public returns (bool success);
+    function approve(address _spender, uint256 _value) public returns (bool);
 
     // Returns the amount which _spender is still allowed to withdraw from _owner.
-    function allowance(address _owner, address _spender) public constant returns (uint256 remaining);
+    function allowance(address _owner, address _spender) public constant returns (uint256);
 
     // Event triggered when tokens are transferred.
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     // Event triggered whenever approve(address _spender, uint256 _value) is called.
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+
 }
 
 /**
@@ -89,66 +90,68 @@ contract SafeMath {
  */
 contract StandardToken is ERC20, SafeMath {
 
-    uint256 private totalSupply;
+    uint256 internal globalSupply;
 
     /* Actual balances of token holders */
-    mapping (address => uint256) private balanceOf;
-    mapping (address => mapping (address => uint256)) private allowance;
+    mapping (address => uint256) internal balanceMap;
+    mapping (address => mapping (address => uint256)) internal allowanceMap;
 
     /* Interface declaration */
-    function isToken() public constant returns (bool weAre) {
+    function isToken() public constant returns (bool) {
         return true;
     }
 
-    function transfer(address _to, uint256 _value) public {
+    function transfer(address _to, uint256 _value) public returns (bool) {
         require (_to != 0x0);                                           // Prevent transfer to 0x0 address. Use burn() instead
-        require (balanceOf[msg.sender] >= _value);                      // Check if the sender has enough
-        require (balanceOf[_to] + _value >= balanceOf[_to]);            // Check for overflows
-        balanceOf[msg.sender] = safeSub(balanceOf[msg.sender], _value); // Subtract from the sender
-        balanceOf[_to] = safeAdd(balanceOf[_to], _value);               // Add the same to the recipient
+        require (balanceMap[msg.sender] >= _value);                      // Check if the sender has enough
+        require (balanceMap[_to] + _value >= balanceMap[_to]);            // Check for overflows
+        balanceMap[msg.sender] = safeSub(balanceMap[msg.sender], _value); // Subtract from the sender
+        balanceMap[_to] = safeAdd(balanceMap[_to], _value);               // Add the same to the recipient
         Transfer(msg.sender, _to, _value);                              // Notify anyone listening that this transfer took place
+        return true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         require (_to != 0x0);                                           // Prevent transfer to 0x0 address. Use burn() instead
-        require (balanceOf[_from] >= _value);                           // Check if the sender has enough
-        require (balanceOf[_to] + _value >= balanceOf[_to]);            // Check for overflows
-        require (_value <= allowance[_from][msg.sender]);               // Check allowance
-        balanceOf[_from] = safeSub(balanceOf[_from], _value);           // Subtract from the sender
-        balanceOf[_to] = safeAdd(balanceOf[_to], _value);               // Add the same to the recipient
+        require (balanceMap[_from] >= _value);                           // Check if the sender has enough
+        require (balanceMap[_to] + _value >= balanceMap[_to]);            // Check for overflows
+        require (_value <= allowanceMap[_from][msg.sender]);               // Check allowance
+        balanceMap[_from] = safeSub(balanceMap[_from], _value);           // Subtract from the sender
+        balanceMap[_to] = safeAdd(balanceMap[_to], _value);               // Add the same to the recipient
 
-        uint256 _allowance = allowance[_from][msg.sender];
-        allowance[_from][msg.sender] = safeSub(_allowance, _value);
+        uint256 _allowance = allowanceMap[_from][msg.sender];
+        allowanceMap[_from][msg.sender] = safeSub(_allowance, _value);
         Transfer(_from, _to, _value);
         return true;
     }
 
-    function totalSupply() public constant returns (uint256 totalSupply) {
-        return totalSupply;
+    function totalSupply() public constant returns (uint256) {
+        return globalSupply;
     }
 
-    function balanceOf(address _owner) public constant returns (uint256 balance) {
-        return balances[_owner];
+    function balanceOf(address _owner) public constant returns (uint256) {
+        return balanceMap[_owner];
     }
 
     /* Allow another contract to spend some tokens on your behalf.
      * To change the approve amount you first have to reduce the addresses allowance to zero by calling
      * approve(_spender, 0) if it is not already 0 to mitigate the race condition described here:
      * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729 */
-    function approve(address _spender, uint _value) public {
-        require ((_value == 0) || (allowed[msg.sender][_spender] == 0));
-        allowance[msg.sender][_spender] = _value;
+    function approve(address _spender, uint _value) public returns (bool) {
+        require ((_value == 0) || (allowanceMap[msg.sender][_spender] == 0));
+        allowanceMap[msg.sender][_spender] = _value;
         Approval(msg.sender, _spender, _value);
+        return true;
     }
 
-    function allowance(address _owner, address _spender) public constant returns (uint remaining) {
-        return allowance[_owner][_spender];
+    function allowance(address _owner, address _spender) public constant returns (uint) {
+        return allowanceMap[_owner][_spender];
     }
 }
 
 contract Owned {
 
-    address private owner;
+    address internal owner;
 
     function Owned() {
         owner = msg.sender;
@@ -163,39 +166,40 @@ contract Owned {
         owner = newOwner;
     }
 
-    function getOwner() public constant returns (String currentOwner) {
+    function getOwner() public constant returns (address currentOwner) {
         return owner;
     }
 }
 
 contract AlsToken is StandardToken, Owned {
 
-    string public constant name = "Alicoin";
+    string public constant name = "CryptoAlias";
     string public constant symbol = "ALS";
     uint8 public constant decimals = 18;        // Same as ETH
 
     address public preIcoAddress;
     address public icoAddress;
 
+
     // pre-ICO end time in seconds since epoch.
-    // Equivalent to Monday, September 25, 2017 00:00:00 UTC
-    uint256 public constant preIcoEndTime = 1506297600;
+    // Equivalent to Tuesday, October 3rd 2017, 2 pm GMT (3 pm London time).
+    uint256 public constant preIcoEndTime = 1507039200;
 
     // ICO end time in seconds since epoch.
-    // Equivalent to Monday, October 30, 2017 00:00:00 UTC
-    uint256 public constant icoEndTime = 1509321600;
+    // Equivalent to Thursday, November 30th 2017, 3 pm GMT (3 pm London time).
+    uint256 public constant icoEndTime = 1512054000;
 
     // 1 million ALS with 18 decimals [10 to the power of (6 + 18) tokens].
-    uint256 private oneMillionAls = 10 ** (6 + decimals);
+    uint256 private oneMillionAls = uint256(10) ** (6 + decimals);
 
     bool private preIcoTokensWereBurned = false;
     bool private icoTokensWereBurned = false;
     bool private teamTokensWereAllocated = false;
 
     /* Initializes the initial supply of ALS to 80 million.
-     * For more details about the token's supply and allocation see [ToDo: Link] */
+     * For more details about the token's supply and allocation see https://github.com/CryptoAlias/ALS */
     function AlsToken() {
-        totalSupply = 80 * oneMillionAls;
+        globalSupply = 80 * oneMillionAls;
     }
 
     modifier onlyAfterPreIco() {
@@ -215,7 +219,7 @@ contract AlsToken is StandardToken, Owned {
         require (preIcoAddress == address(0x0));
 
         preIcoAddress = _preIcoAddress;
-        balanceOf[preIcoAddress] = 10 * oneMillionAls;
+        balanceMap[preIcoAddress] = 10 * oneMillionAls;
 
         PreIcoAddressSet(preIcoAddress);
     }
@@ -227,7 +231,7 @@ contract AlsToken is StandardToken, Owned {
         require (icoAddress == address(0x0));
 
         icoAddress = _icoAddress;
-        balanceOf[icoAddress] = 70 * oneMillionAls;
+        balanceMap[icoAddress] = 70 * oneMillionAls;
 
         IcoAddressSet(icoAddress);
     }
@@ -235,30 +239,30 @@ contract AlsToken is StandardToken, Owned {
     // Burns the tokens not sold during the pre-ICO. Can be invoked only after the pre-ICO ends.
     function burnPreIcoTokens() external onlyAfterPreIco {
         require (!preIcoTokensWereBurned);
+        preIcoTokensWereBurned = true;
 
-        uint256 tokensToBurn = balanceOf[preIcoAddress];
+        uint256 tokensToBurn = balanceMap[preIcoAddress];
         if (tokensToBurn > 0)
         {
-            balanceOf[preIcoAddress] = 0;
-            totalSupply = safeSub(totalSupply, _value);
+            balanceMap[preIcoAddress] = 0;
+            globalSupply = safeSub(globalSupply, tokensToBurn);
         }
 
-        preIcoTokensWereBurned = true;
         Burned(preIcoAddress, tokensToBurn);
     }
 
     // Burns the tokens not sold during the ICO. Can be invoked only after the ICO ends.
     function burnIcoTokens() external onlyAfterIco {
         require (!icoTokensWereBurned);
+        icoTokensWereBurned = true;
 
-        uint256 tokensToBurn = balanceOf[icoAddress];
+        uint256 tokensToBurn = balanceMap[icoAddress];
         if (tokensToBurn > 0)
         {
-            balanceOf[icoAddress] = 0;
-            totalSupply = safeSub(totalSupply, _value);
+            balanceMap[icoAddress] = 0;
+            globalSupply = safeSub(globalSupply, tokensToBurn);
         }
 
-        icoTokensWereBurned = true;
         Burned(icoAddress, tokensToBurn);
     }
 
@@ -268,13 +272,13 @@ contract AlsToken is StandardToken, Owned {
         require (icoTokensWereBurned);
         require (!teamTokensWereAllocated);
 
-        uint256 oneTenth = safeDiv(totalSupply, 8);
+        uint256 oneTenth = safeDiv(globalSupply, 8);
 
-        balanceOf[_teamAddress] = oneTenth;
-        totalSupply = safeAdd(totalSupply, oneTenth);
+        balanceMap[_teamAddress] = oneTenth;
+        globalSupply = safeAdd(globalSupply, oneTenth);
 
-        balanceOf[_partnersAddress] = oneTenth;
-        totalSupply = safeAdd(totalSupply, oneTenth);
+        balanceMap[_partnersAddress] = oneTenth;
+        globalSupply = safeAdd(globalSupply, oneTenth);
 
         teamTokensWereAllocated = true;
 
