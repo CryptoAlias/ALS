@@ -87,4 +87,4 @@ In contrast to the pre-ICO, the token price during the ICO is varying depending 
 | < 15 days            | 1 ETH = 1050 ALS  |
 | > 15 days            | 1 ETH = 1000 ALS  |
 
-The ICO crowdsale will end after 21 days from its start, or when all the allocated tokens are sold out.
+The ICO crowdsale will end on November 30th, at 3 pm London time, or when all the allocated tokens are sold out (whichever happens first).
