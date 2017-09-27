@@ -57,12 +57,12 @@ contract Owned {
 contract AlsPreIco is Owned, SafeMath {
 
     // Crowdsale start time in seconds since epoch.
-    // Equivalent to Tuesday, September 12th 2017, 2 pm GMT (3 pm London time)
-    uint256 public constant crowdsaleStartTime = 1505224800;
+    // Equivalent to Sunday, October 15th 2017, 12:00 am London time.
+    uint256 public constant crowdsaleStartTime = 1508025600;
 
     // Crowdsale end time in seconds since epoch.
-    // Equivalent to Tuesday, October 3rd 2017, 2 pm GMT (3 pm London time).
-    uint256 public constant crowdsaleEndTime = 1507039200;
+    // Equivalent to Tuesday, October 31st 2017, 12:00 am London time.
+    uint256 public constant crowdsaleEndTime = 1509408000;
 
     // During the pre-ICO 1 ETH buys 2000 ALS.
     uint public constant price = 2000;

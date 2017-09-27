@@ -3,6 +3,7 @@ pragma solidity ^0.4.11;
 /**
  * ERC20 interface
  * see https://github.com/ethereum/EIPs/issues/20
+ * and https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
 contract ERC20 {
 
@@ -182,12 +183,12 @@ contract AlsToken is StandardToken, Owned {
 
 
     // pre-ICO end time in seconds since epoch.
-    // Equivalent to Tuesday, October 3rd 2017, 2 pm GMT (3 pm London time).
-    uint256 public constant preIcoEndTime = 1507039200;
+    // Equivalent to Tuesday, October 31st 2017, 12:00 am London time.
+    uint256 public constant preIcoEndTime = 1509408000;
 
     // ICO end time in seconds since epoch.
-    // Equivalent to Thursday, November 30th 2017, 3 pm GMT (3 pm London time).
-    uint256 public constant icoEndTime = 1512054000;
+    // Equivalent to Friday, December 15th 2017, 3 pm London time.
+    uint256 public constant icoEndTime = 1513350000;
 
     // 1 million ALS with 18 decimals [10 to the power of (6 + 18) tokens].
     uint256 private oneMillionAls = uint256(10) ** (6 + decimals);
@@ -212,31 +213,31 @@ contract AlsToken is StandardToken, Owned {
         _;
     }
 
-    /* Sets the pre-ICO address and allocates it 10 million tokens.
+    /* Sets the pre-ICO address and allocates it 5 million tokens.
      * Can be invoked only by the owner.
      * Can be called only once. Once set, the pre-ICO address can not be changed. Any subsequent calls to this method will be ignored. */
     function setPreIcoAddress(address _preIcoAddress) external onlyOwner {
         require (preIcoAddress == address(0x0));
 
         preIcoAddress = _preIcoAddress;
-        balanceMap[preIcoAddress] = 10 * oneMillionAls;
+        balanceMap[preIcoAddress] = 5 * oneMillionAls;
 
         PreIcoAddressSet(preIcoAddress);
     }
 
-    /* Sets the ICO address and allocates it 70 million tokens.
+    /* Sets the ICO address and allocates it 75 million tokens.
      * Can be invoked only by the owner.
      * Can be called only once. Once set, the ICO address can not be changed. Any subsequent calls to this method will be ignored. */
     function setIcoAddress(address _icoAddress) external onlyOwner {
         require (icoAddress == address(0x0));
 
         icoAddress = _icoAddress;
-        balanceMap[icoAddress] = 70 * oneMillionAls;
+        balanceMap[icoAddress] = 75 * oneMillionAls;
 
         IcoAddressSet(icoAddress);
     }
 
-    // Burns the tokens not sold during the pre-ICO. Can be invoked only after the pre-ICO ends.
+    // Burns the tokens that were not sold during the pre-ICO. Can be invoked only after the pre-ICO ends.
     function burnPreIcoTokens() external onlyAfterPreIco {
         require (!preIcoTokensWereBurned);
         preIcoTokensWereBurned = true;
@@ -251,7 +252,7 @@ contract AlsToken is StandardToken, Owned {
         Burned(preIcoAddress, tokensToBurn);
     }
 
-    // Burns the tokens not sold during the ICO. Can be invoked only after the ICO ends.
+    // Burns the tokens that were not sold during the ICO. Can be invoked only after the ICO ends.
     function burnIcoTokens() external onlyAfterIco {
         require (!icoTokensWereBurned);
         icoTokensWereBurned = true;

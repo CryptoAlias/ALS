@@ -57,12 +57,12 @@ contract Owned {
 contract AlsIco is Owned, SafeMath {
 
     // Crowdsale start time in seconds since epoch.
-    // Equivalent to Wednesday, November 1st 2017, 3 pm GMT (3 pm London time).
-    uint256 public constant crowdsaleStartTime = 1509548400;
+    // Equivalent to Wednesday, November 15th 2017, 3 pm London time.
+    uint256 public constant crowdsaleStartTime = 1510758000;
 
     // Crowdsale end time in seconds since epoch.
-    // Equivalent to Thursday, November 30th 2017, 3 pm GMT (3 pm London time).
-    uint256 public constant crowdsaleEndTime = 1512054000;
+    // Equivalent to Friday, December 15th 2017, 3 pm London time.
+    uint256 public constant crowdsaleEndTime = 1513350000;
 
     uint public amountRaised;
     AlsToken public alsToken;
