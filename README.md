@@ -1,13 +1,3 @@
-## Note
-The code from this repository is from an earlier version of the CryptoAlias contract (that was used on the testnet). It will be updated soon.
-
-<br />
-
-<br />
-
-<br />
-
-
 # ALS
 
 <br />
@@ -73,17 +63,24 @@ The ```allocateTeamAndPartnerTokens(address _teamAddress, address _partnersAddre
 
 
 ## Pre-sale contract
-The pre-sale token price is hardcoded into the contract's code. During the pre-sale, the token price is constant: 2000 ALS per 1 ETH.
+The pre-sale contract extends the SafeMath and Owned contracts, similarly to the AlsToken contract and for the same reasons.
+
+The pre-sale start time, end time, and token price are hardcoded into the contract's code. During the pre-sale, the token price is constant: 2000 ALS per 1 ETH.
+
+Upon contract creation, the ALC token address is set and can not be changed.
+
+The contract will accept payments during the pre-sale period, as long as the tokens allocated for the pre-sale are not sold out. Any payments sent before or after the pre-sale will be rejected. Payments sent after the tokens were sold out will be rejected as well.
+
+If during a buy there are ALS tokens available for sale, but the amount of existing tokens is less than the amount requested, then the contract will sell the existing tokens, keep the equivalent of their price from the received ETH, and return the rest of the ETH back to the caller.
 
 <br />
 
-// This section will be completed after the code is updated.
-
 ## ICO contract
-The ICO contract extends the SafeMath and Owned contracts, similarly to the AlsToken contract and for the same reasons.
+The ICO contract is identical to the pre-sale contract with the exception of the crowdsale start time, end time, and token price.
 
-The crowdsale start and end time are hardcoded into the contract's code. 
+The crowdsale start and end times are hardcoded into the contract's code.
 In contrast to the pre-sale, the token price during the ICO is varying depending on time. The earlier buyers invest, the more tokens they receive. The dependency of the ALS token price on time is illustrated in the table below:
+
 
 | Time since ICO start | Exchange rate     |
 | :------------------: | :---------------: |
@@ -93,11 +90,5 @@ In contrast to the pre-sale, the token price during the ICO is varying depending
 | < 10 days            | 1 ETH = 1100 ALS  |
 | < 15 days            | 1 ETH = 1050 ALS  |
 | > 15 days            | 1 ETH = 1000 ALS  |
-
-Upon contract creation, the ALC token address is set and can not be changed.
-
-The contract will accept payments during the ICO period, as long as the tokens allocated for the crowdsale are not sold out. Any payments sent before or after the ICO will be rejected. Payments sent after the tokens were sold out will be rejected as well.
-
-If during a buy there are ALS tokens available for sale, but the amount of existing tokens is less than the amount requested, then the contract will sell the existing tokens, keep the equivalent of their price from the received ETH, and return the rest of the ETH back to the caller.
 
 The ICO crowdsale will end on December 15th, at 3 pm London time, or when all the allocated tokens are sold out (whichever happens first).
