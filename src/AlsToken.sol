@@ -42,43 +42,43 @@ contract ERC20 {
  */
 contract SafeMath {
 
-    function safeMul(uint a, uint b) internal returns (uint) {
+    function safeMul(uint a, uint b) internal pure returns (uint) {
         uint c = a * b;
         require(a == 0 || c / a == b);
         return c;
     }
 
-    function safeDiv(uint a, uint b) internal returns (uint) {
+    function safeDiv(uint a, uint b) internal pure returns (uint) {
         require(b > 0);
         uint c = a / b;
         require(a == b * c + a % b);
         return c;
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function safeSub(uint a, uint b) internal pure returns (uint) {
         require(b <= a);
         return a - b;
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function safeAdd(uint a, uint b) internal pure returns (uint) {
         uint c = a + b;
         require(c >= a && c >= b);
         return c;
     }
 
-    function max64(uint64 a, uint64 b) internal constant returns (uint64) {
+    function max64(uint64 a, uint64 b) internal pure returns (uint64) {
         return a >= b ? a : b;
     }
 
-    function min64(uint64 a, uint64 b) internal constant returns (uint64) {
+    function min64(uint64 a, uint64 b) internal pure returns (uint64) {
         return a < b ? a : b;
     }
 
-    function max256(uint256 a, uint256 b) internal constant returns (uint256) {
+    function max256(uint256 a, uint256 b) internal pure returns (uint256) {
         return a >= b ? a : b;
     }
 
-    function min256(uint256 a, uint256 b) internal constant returns (uint256) {
+    function min256(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? a : b;
     }
 }
@@ -98,7 +98,7 @@ contract StandardToken is ERC20, SafeMath {
     mapping (address => mapping (address => uint256)) internal allowanceMap;
 
     /* Interface declaration */
-    function isToken() public constant returns (bool) {
+    function isToken() public pure returns (bool) {
         return true;
     }
 
@@ -154,7 +154,7 @@ contract Owned {
 
     address internal owner;
 
-    function Owned() {
+    function Owned() public {
         owner = msg.sender;
     }
 
@@ -178,34 +178,22 @@ contract AlsToken is StandardToken, Owned {
     string public constant symbol = "ALS";
     uint8 public constant decimals = 18;        // Same as ETH
 
-    address public preIcoAddress;
     address public icoAddress;
 
-
-    // pre-ICO end time in seconds since epoch.
-    // Equivalent to Tuesday, October 31st 2017, 12:00 am London time.
-    uint256 public constant preIcoEndTime = 1509408000;
-
     // ICO end time in seconds since epoch.
-    // Equivalent to Friday, December 15th 2017, 3 pm London time.
-    uint256 public constant icoEndTime = 1513350000;
+    // Equivalent to Tuesday, February 20th 2018, 3 pm London time.
+    uint256 public constant icoEndTime = 1519138800;
 
     // 1 million ALS with 18 decimals [10 to the power of (6 + 18) tokens].
-    uint256 private oneMillionAls = uint256(10) ** (6 + decimals);
+    uint256 private constant oneMillionAls = uint256(10) ** (6 + decimals);
 
-    bool private preIcoTokensWereBurned = false;
     bool private icoTokensWereBurned = false;
     bool private teamTokensWereAllocated = false;
 
     /* Initializes the initial supply of ALS to 80 million.
      * For more details about the token's supply and allocation see https://github.com/CryptoAlias/ALS */
-    function AlsToken() {
+    function AlsToken() public {
         globalSupply = 80 * oneMillionAls;
-    }
-
-    modifier onlyAfterPreIco() {
-        require(now >= preIcoEndTime);
-        _;
     }
 
     modifier onlyAfterIco() {
@@ -213,43 +201,16 @@ contract AlsToken is StandardToken, Owned {
         _;
     }
 
-    /* Sets the pre-ICO address and allocates it 5 million tokens.
-     * Can be invoked only by the owner.
-     * Can be called only once. Once set, the pre-ICO address can not be changed. Any subsequent calls to this method will be ignored. */
-    function setPreIcoAddress(address _preIcoAddress) external onlyOwner {
-        require (preIcoAddress == address(0x0));
-
-        preIcoAddress = _preIcoAddress;
-        balanceMap[preIcoAddress] = 5 * oneMillionAls;
-
-        PreIcoAddressSet(preIcoAddress);
-    }
-
-    /* Sets the ICO address and allocates it 75 million tokens.
+    /* Sets the ICO address and allocates it 80 million tokens.
      * Can be invoked only by the owner.
      * Can be called only once. Once set, the ICO address can not be changed. Any subsequent calls to this method will be ignored. */
     function setIcoAddress(address _icoAddress) external onlyOwner {
         require (icoAddress == address(0x0));
 
         icoAddress = _icoAddress;
-        balanceMap[icoAddress] = 75 * oneMillionAls;
+        balanceMap[icoAddress] = 80 * oneMillionAls;
 
         IcoAddressSet(icoAddress);
-    }
-
-    // Burns the tokens that were not sold during the pre-ICO. Can be invoked only after the pre-ICO ends.
-    function burnPreIcoTokens() external onlyAfterPreIco {
-        require (!preIcoTokensWereBurned);
-        preIcoTokensWereBurned = true;
-
-        uint256 tokensToBurn = balanceMap[preIcoAddress];
-        if (tokensToBurn > 0)
-        {
-            balanceMap[preIcoAddress] = 0;
-            globalSupply = safeSub(globalSupply, tokensToBurn);
-        }
-
-        Burned(preIcoAddress, tokensToBurn);
     }
 
     // Burns the tokens that were not sold during the ICO. Can be invoked only after the ICO ends.
@@ -267,9 +228,7 @@ contract AlsToken is StandardToken, Owned {
         Burned(icoAddress, tokensToBurn);
     }
 
-
     function allocateTeamAndPartnerTokens(address _teamAddress, address _partnersAddress) external onlyOwner {
-        require (preIcoTokensWereBurned);
         require (icoTokensWereBurned);
         require (!teamTokensWereAllocated);
 
@@ -285,9 +244,6 @@ contract AlsToken is StandardToken, Owned {
 
         TeamAndPartnerTokensAllocated(_teamAddress, _partnersAddress);
     }
-
-    // Event triggered when the Pre-ICO address was set.
-    event PreIcoAddressSet(address _preIcoAddress);
 
     // Event triggered when the ICO address was set.
     event IcoAddressSet(address _icoAddress);

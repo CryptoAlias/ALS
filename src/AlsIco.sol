@@ -2,25 +2,25 @@ pragma solidity ^0.4.11;
 
 contract SafeMath {
 
-    function safeMul(uint a, uint b) internal returns (uint) {
+    function safeMul(uint a, uint b) internal pure returns (uint) {
         uint c = a * b;
         require(a == 0 || c / a == b);
         return c;
     }
 
-    function safeDiv(uint a, uint b) internal returns (uint) {
+    function safeDiv(uint a, uint b) internal pure returns (uint) {
         require(b > 0);
         uint c = a / b;
         require(a == b * c + a % b);
         return c;
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function safeSub(uint a, uint b) internal pure returns (uint) {
         require(b <= a);
         return a - b;
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function safeAdd(uint a, uint b) internal pure returns (uint) {
         uint c = a + b;
         require(c >= a && c >= b);
         return c;
@@ -36,7 +36,7 @@ contract Owned {
 
     address internal owner;
 
-    function Owned() {
+    function Owned() public {
         owner = msg.sender;
     }
 
@@ -57,19 +57,20 @@ contract Owned {
 contract AlsIco is Owned, SafeMath {
 
     // Crowdsale start time in seconds since epoch.
-    // Equivalent to Wednesday, November 15th 2017, 3 pm London time.
-    uint256 public constant crowdsaleStartTime = 1510758000;
+    // Equivalent to Wednesday, December 20th 2017, 3 pm London time.
+    uint256 public constant crowdsaleStartTime = 1513782000;
 
     // Crowdsale end time in seconds since epoch.
-    // Equivalent to Friday, December 15th 2017, 3 pm London time.
-    uint256 public constant crowdsaleEndTime = 1513350000;
+    // Equivalent to Tuesday, February 20th 2018, 3 pm London time.
+    uint256 public constant crowdsaleEndTime = 1519138800;
 
     uint public amountRaised;
+    uint public tokensSold;
     AlsToken public alsToken;
 
     event FundTransfer(address backer, uint amount, bool isContribution);
 
-    function AlsIco(address alsTokenAddress) {
+    function AlsIco(address alsTokenAddress) public {
         alsToken = AlsToken(alsTokenAddress);
     }
 
@@ -83,31 +84,27 @@ contract AlsIco is Owned, SafeMath {
         _;
     }
 
-    // Returns ALS/ETH current price.
+    // Returns how many ALS are given in exchange for 1 ETH.
     function getPrice() public constant onlyAfterStart onlyBeforeEnd returns (uint256) {
-
-        if (now < (crowdsaleStartTime + 1 days)) {
-            // In the first day, 1 ETH buys 1250 ALS.
-            return 1250;
-        } else if (now < (crowdsaleStartTime + 3 days)) {
-            // In the first 3 days, 1 ETH buys 1200 ALS.
-            return 1200;
-        } else if (now < (crowdsaleStartTime + 6 days)) {
-            // In the first 6 days, 1 ETH buys 1150 ALS.
-            return 1150;
-        } else if (now < (crowdsaleStartTime + 10 days)) {
-            // In the first 10 days, 1 ETH buys 1100 ALS.
-            return 1100;
-        } else if (now < (crowdsaleStartTime + 15 days)) {
-            // In the first 15 days, 1 ETH buys 1050 ALS.
-            return 1050;
+        if (tokensSold < 1600000) {
+            // Firs 2% (equivalent to first 1.600.000 ALS) get 70% bonus (equivalent to 17000 ALS per 1 ETH).
+            return 17000;
+        } else if (tokensSold < 8000000) {
+            // Firs 10% (equivalent to first 8.000.000 ALS) get 30% bonus (equivalent to 13000 ALS per 1 ETH).
+            return 13000;
+        } else if (tokensSold < 16000000) {
+            // Firs 20% (equivalent to first 16.000.000 ALS) get 10% bonus (equivalent to 11000 ALS per 1 ETH).
+            return 11000;
+        } else if (tokensSold < 40000000) {
+            // Firs 50% (equivalent to first 40.000.000 ALS) get 5% bonus (equivalent to 10500 ALS per 1 ETH).
+            return 10500;
         } else {
-            // After the first 15 days, 1 ETH buys 1000 ALS.
-            return 1000;
+            // The rest of the tokens (after 50%) will be sold without a bonus.
+            return 10000;
         }
     }
 
-    function () payable onlyAfterStart onlyBeforeEnd {
+    function () payable public onlyAfterStart onlyBeforeEnd {
         uint256 availableTokens = alsToken.balanceOf(this);
         require (availableTokens > 0);
 
@@ -119,12 +116,14 @@ contract AlsIco is Owned, SafeMath {
 
         if (tokenAmount <= availableTokens) {
             amountRaised = safeAdd(amountRaised, etherAmount);
+            tokensSold = safeAdd(tokensSold, tokenAmount);
 
             alsToken.transfer(msg.sender, tokenAmount);
             FundTransfer(msg.sender, etherAmount, true);
         } else {
             uint256 etherToSpend = safeDiv(availableTokens, price);
             amountRaised = safeAdd(amountRaised, etherToSpend);
+            tokensSold = safeAdd(tokensSold, availableTokens);
 
             alsToken.transfer(msg.sender, availableTokens);
             FundTransfer(msg.sender, etherToSpend, true);
